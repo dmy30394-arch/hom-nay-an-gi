@@ -17,12 +17,18 @@ function getConfig() {
     throw error;
   }
 
-  return {
-    email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    privateKey: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    sheetName: process.env.GOOGLE_SHEET_NAME,
-  };
+ const privateKey = process.env.GOOGLE_PRIVATE_KEY
+  .replace(/^"(.*)"$/s, '$1')
+  .replace(/\\n/g, '\n')
+  .replace(/\r\n/g, '\n')
+  .trim();
+
+return {
+  email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL.trim(),
+  privateKey,
+  spreadsheetId: process.env.GOOGLE_SHEET_ID.trim(),
+  sheetName: process.env.GOOGLE_SHEET_NAME.trim(),
+};
 }
 
 function getSheets() {
