@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hôm nay ăn gì?</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --green: #2f6748;
+      --green-2: #4da66c;
+      --green-light: #edf8ed;
+      --cream: #fbfcf1;
+      --text: #28513c;
+      --muted: #718579;
+      --border: #cfe1ce;
+      --orange: #f2a84b;
+      --blue-light: #eef9fc;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 8% 8%, rgba(173, 211, 137, .25), transparent 18%),
+        radial-gradient(circle at 92% 12%, rgba(255, 211, 125, .18), transparent 17%),
+        linear-gradient(180deg, #fbfcf1 0%, #f2f8ec 100%);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 24px 12px 45px;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      left: -5%;
+      right: -5%;
+      bottom: -55px;
+      height: 105px;
+      background: #e2f0d4;
+      border-radius: 50% 50% 0 0;
+      z-index: -1;
+    }
+
+    .app {
+      width: min(100%, 520px);
+      background: rgba(255,255,255,.66);
+      border: 1px solid #d9e7d5;
+      border-radius: 30px;
+      box-shadow: 0 18px 55px rgba(47, 91, 55, .11);
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+    }
+
+    .header {
+      position: relative;
+      text-align: center;
+      padding: 27px 22px 20px;
+    }
+
+    .close {
+      position: absolute;
+      top: 17px;
+      right: 19px;
+      border: 0;
+      background: #eef6e8;
+      color: #6b8a72;
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      font-size: 24px;
+      line-height: 30px;
+      cursor: pointer;
+    }
+
+    .icon {
+      font-size: 35px;
+      line-height: 1;
+      margin-bottom: 9px;
+    }
+
+    h1 {
+      display: inline-block;
+      margin: 0;
+      padding: 4px 16px 7px;
+      font-size: clamp(25px, 7vw, 34px);
+      line-height: 1.1;
+      letter-spacing: .2px;
+      font-weight: 950;
+      color: #20583c;
+      background: linear-gradient(transparent 48%, #ffe6a8 48%, #ffe6a8 88%, transparent 88%);
+      border-radius: 15px;
+    }
+
+    .subtitle {
+      margin: 11px 0 0;
+      color: #5d7968;
+      font-size: 12px;
+    }
+
+
+    .random-open-btn {
+      margin-top: 14px;
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 18px;
+      background: #f3b35d;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(211, 144, 48, .18);
+    }
+
+    .random-open-btn:hover {
+      background: #e9a54c;
+      transform: translateY(-1px);
+    }
+
+    .random-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      min-height: 100vh;
+      padding: 55px 22px 30px;
+      text-align: center;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(255, 222, 143, .34), transparent 25%),
+        linear-gradient(180deg, #fbfcf1 0%, #edf7e9 100%);
+      align-items: center;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .random-screen.show {
+      display: flex;
+    }
+
+    .random-close {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      width: 38px;
+      height: 38px;
+      border: 0;
+      border-radius: 50%;
+      background: #eaf5e6;
+      color: #62816a;
+      font-size: 25px;
+      cursor: pointer;
+    }
+
+    .random-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+
+    .random-screen h2 {
+      margin: 0;
+      color: #245b3e;
+      font-size: clamp(22px, 6vw, 31px);
+      font-weight: 950;
+    }
+
+    .random-result {
+      width: min(100%, 470px);
+      margin: 22px auto 8px;
+      min-height: 88px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      border: 2px solid #9bc79d;
+      border-radius: 24px;
+      background: rgba(255,255,255,.9);
+      color: #245b3e;
+      font-size: clamp(25px, 7vw, 38px);
+      font-weight: 950;
+      box-shadow: 0 12px 28px rgba(49, 105, 61, .11);
+    }
+
+    .random-result.spinning {
+      animation: resultPulse .16s infinite alternate;
+    }
+
+    @keyframes resultPulse {
+      from { transform: scale(.98); opacity: .65; }
+      to { transform: scale(1.02); opacity: 1; }
+    }
+
+    .random-category {
+      margin: 0 0 22px;
+      color: #718579;
+      font-size: 12px;
+    }
+
+    .spin-btn {
+      border: 0;
+      border-radius: 16px;
+      padding: 14px 27px;
+      background: #4da66c;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 950;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(77,166,108,.22);
+    }
+
+    .spin-btn:hover {
+      background: #3d935b;
+    }
+
+    .back-btn {
+      margin-top: 13px;
+      border: 0;
+      background: transparent;
+      color: #718579;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .content {
+      padding: 0 18px 22px;
+    }
+
+    .choice {
+      width: 100%;
+      min-height: 76px;
+      margin: 0 0 10px;
+      padding: 13px 17px;
+      border-radius: 20px;
+      border: 1.5px solid #d4e2d1;
+      background: rgba(255,255,255,.78);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      text-align: left;
+      cursor: pointer;
+      transition: .18s ease;
+      box-shadow: 0 5px 16px rgba(49, 88, 57, .045);
+    }
+
+    .choice:hover {
+      transform: translateY(-1px);
+      border-color: #94bd99;
+      background: #f8fcf5;
+    }
+
+    .choice.active {
+      border-color: #82ad87;
+      background: #f2faef;
+      box-shadow: 0 5px 18px rgba(67, 122, 77, .08);
+    }
+
+    .choice-icon {
+      width: 51px;
+      height: 51px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      flex: 0 0 51px;
+      font-size: 29px;
+      background: #edf8d8;
+    }
+
+    .choice:nth-of-type(2) .choice-icon {
+      background: #fff1c9;
+    }
+
+    .choice-title {
+      font-weight: 900;
+      font-size: 16px;
+      color: #28573d;
+    }
+
+    .choice-desc {
+      margin-top: 4px;
+      color: #718579;
+      font-size: 10px;
+    }
+
+    .sub-choices {
+      display: none;
+      margin: -2px 0 10px 18px;
+      padding: 4px 0 1px 13px;
+      border-left: 2px solid #d8e8d3;
+    }
+
+    .sub-choices.show { display: block; }
+
+    .sub-choice {
+      min-height: 65px;
+      margin-bottom: 8px;
+      border-radius: 17px;
+      background: rgba(250,253,247,.9);
+    }
+
+    .sub-choice .choice-icon {
+      width: 43px;
+      height: 43px;
+      flex-basis: 43px;
+      font-size: 24px;
+    }
+
+    .panel {
+      margin-top: 17px;
+      padding: 16px;
+      border: 1.5px solid #c9e1ed;
+      border-radius: 21px;
+      background: rgba(241,250,253,.92);
+      box-shadow: 0 8px 22px rgba(58, 105, 121, .06);
+    }
+
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .panel-title strong {
+      font-size: 16px;
+      font-weight: 900;
+      color: #28573d;
+    }
+
+    .badge {
+      font-size: 10px;
+      color: #5d7a69;
+      background: #fff;
+      border: 1px solid #cbded0;
+      padding: 6px 9px;
+      border-radius: 999px;
+    }
+
+    .random-box {
+      display: flex;
+      align-items: stretch;
+      gap: 9px;
+      margin-bottom: 12px;
+      padding: 10px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, #fff8dc, #fff3cf);
+      border: 1px solid #f0ddb0;
+    }
+
+    .random-result {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2px 4px;
+    }
+
+    .random-label {
+      color: #92764a;
+      font-size: 9px;
+      margin-bottom: 4px;
+    }
+
+    .random-result strong {
+      color: #5a4a2d;
+      font-size: 13px;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .random-btn {
+      flex: 0 0 auto;
+      border: 0;
+      border-radius: 12px;
+      padding: 0 14px;
+      background: #f0a64a;
+      color: #fff;
+      font-weight: 900;
+      font-size: 11px;
+      cursor: pointer;
+      box-shadow: 0 5px 12px rgba(240,166,74,.22);
+    }
+
+    .random-btn:hover {
+      background: #df9138;
+    }
+
+    .add-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    input {
+      min-width: 0;
+      flex: 1;
+      border: 1.5px solid #c5dce5;
+      outline: none;
+      color: var(--text);
+      background: #fff;
+      border-radius: 13px;
+      padding: 12px 13px;
+      font-size: 12px;
+    }
+
+    select {
+      flex: 0 0 125px;
+      min-width: 0;
+      border: 1.5px solid #c5dce5;
+      outline: none;
+      color: var(--text);
+      background: #fff;
+      border-radius: 13px;
+      padding: 10px 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    select:focus {
+      border-color: #7fb5c5;
+      box-shadow: 0 0 0 3px rgba(127,181,197,.12);
+    }
+
+    input:focus {
+      border-color: #7fb5c5;
+      box-shadow: 0 0 0 3px rgba(127,181,197,.12);
+    }
+
+    .add-btn {
+      border: 0;
+      border-radius: 13px;
+      padding: 0 17px;
+      background: #4da66c;
+      color: #fff;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 5px 12px rgba(77,166,108,.2);
+    }
+
+    .add-btn:hover { background: #3d935b; }
+
+    .list {
+      display: grid;
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .dish {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 11px;
+      border-radius: 12px;
+      background: #f7fbf5;
+      border: 1px solid #dbe8d8;
+    }
+
+    .dish-name {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .dish-category {
+      display: block;
+      color: #839286;
+      font-size: 9px;
+      margin-top: 3px;
+    }
+
+    .delete-btn {
+      border: 0;
+      background: transparent;
+      color: #b47768;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .dish-actions {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+
+    .edit-btn,
+    .delete-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      border: 0;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .edit-btn {
+      background: #edf7ef;
+      color: #4d8960;
+    }
+
+    .delete-btn {
+      background: #fff1ed;
+      color: #b47768;
+    }
+
+    .empty {
+      color: #809187;
+      font-size: 11px;
+      text-align: center;
+      padding: 14px 5px 4px;
+    }
+
+    .note {
+      margin-top: 11px;
+      color: #8a9990;
+      font-size: 9px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    @media (max-width: 430px) {
+      .random-box {
+        flex-direction: column;
+      }
+
+      .random-btn {
+        min-height: 42px;
+      }
+
+      .add-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .add-row input {
+        grid-column: 1 / -1;
+      }
+
+      .add-row select,
+      .add-row .add-btn {
+        min-height: 44px;
+      }
+
+      body { padding: 0 0 35px; }
+      .app {
+        min-height: 100vh;
+        border-radius: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="random-screen" id="randomScreen">
+    <button class="random-close" onclick="closeRandom()" aria-label="Đóng">×</button>
+    <div class="random-icon">🎲</div>
+    <h2>HÔM NAY BẠN SẼ ĂN:</h2>
+    <div class="random-result" id="randomResult">?</div>
+    <p class="random-category" id="randomCategory">Chọn một phân loại rồi quay món</p>
+    <button class="spin-btn" onclick="spinRandom()">🎰 QUAY MÓN</button>
+    <button class="back-btn" onclick="closeRandom()">← Quay lại danh sách</button>
+  </section>
+
+  <main class="app" id="mainApp">
+    <header class="header">
+      <button class="close" onclick="clearSelection()" aria-label="Đóng">×</button>
+      <div class="icon">🍴</div>
+      <h1>HÔM NAY ĂN GÌ?</h1>
+      <p class="subtitle">Chọn kiểu ăn rồi xem danh sách món ăn</p>
+      <button class="random-open-btn" onclick="openRandom()">🎲 Random món</button>
+    </header>
+
+    <section class="content">
+      <button class="choice active" onclick="selectMainCategory('com-nha')" id="btn-com-nha">
+        <div class="choice-icon">🏠</div>
+        <div>
+          <div class="choice-title">Cơm nhà</div>
+          <div class="choice-desc">Các món ăn nấu tại nhà</div>
+        </div>
+      </button>
+
+      <div class="sub-choices" id="subChoices">
+        <button class="choice sub-choice" onclick="selectCategory('mon-man')" id="btn-mon-man">
+          <div class="choice-icon">🍖</div>
+          <div>
+            <div class="choice-title">Món mặn</div>
+            <div class="choice-desc">Các món mặn ăn cùng cơm</div>
+          </div>
+        </button>
+
+        <button class="choice sub-choice" onclick="selectCategory('mon-canh')" id="btn-mon-canh">
+          <div class="choice-icon">🍲</div>
+          <div>
+            <div class="choice-title">Món canh</div>
+            <div class="choice-desc">Các món canh trong bữa cơm</div>
+          </div>
+        </button>
+      </div>
+
+      <button class="choice" onclick="selectCategory('com-ngoai')" id="btn-com-ngoai">
+        <div class="choice-icon">🍜</div>
+        <div>
+          <div class="choice-title">Cơm ngoài</div>
+          <div class="choice-desc">Danh sách món ăn bên ngoài</div>
+        </div>
+      </button>
+
+      <div class="panel">
+        <div class="panel-title">
+          <strong id="listTitle">Thêm món</strong>
+          <span class="badge" id="count">0 món</span>
+        </div>
+
+        <div class="random-box">
+          <div class="random-result" id="randomResult">
+            <span class="random-label">🎲 Món được chọn</span>
+            <strong id="randomDish">Bấm nút để chọn món</strong>
+          </div>
+          <button class="random-btn" onclick="randomDish()">🎲 Random món</button>
+        </div>
+
+        <div class="add-row">
+          <input id="dishInput" type="text" placeholder="Nhập món muốn thêm..." />
+          <select id="dishCategory" aria-label="Chọn phân loại món">
+            <option value="mon-man">🍖 Món mặn</option>
+            <option value="mon-canh">🍲 Món canh</option>
+            <option value="com-ngoai">🍜 Cơm ngoài</option>
+          </select>
+          <button class="add-btn" onclick="addDish()">+ Thêm</button>
+        </div>
+
+        <div class="list" id="dishList"></div>
+
+        <div class="note">
+          Dữ liệu được lưu chung trên Google Sheets. Mọi người mở website đều thấy danh sách mới nhất và có thể thêm, sửa hoặc xóa món.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const CATEGORY_NAMES = {
+      "mon-man": "Món mặn",
+      "mon-canh": "Món canh",
+      "com-ngoai": "Cơm ngoài"
+    };
+
+    let dishes = {
+      "mon-man": [],
+      "mon-canh": [],
+      "com-ngoai": []
+    };
+
+    let currentCategory = "mon-man";
+    let isLoading = false;
+
+    function groupDishes(rows) {
+      const grouped = { "mon-man": [], "mon-canh": [], "com-ngoai": [] };
+      (rows || []).forEach(dish => {
+        if (grouped[dish.category]) grouped[dish.category].push(dish);
+      });
+      return grouped;
+    }
+
+    async function loadDishes(silent = false) {
+      if (isLoading) return;
+      isLoading = true;
+
+      try {
+        const response = await fetch("/api/dishes", { cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Không tải được danh sách món.");
+
+        dishes = groupDishes(data.dishes);
+        render();
+      } catch (error) {
+        console.error(error);
+        if (!silent) showStatus("Không kết nối được Google Sheets.");
+      } finally {
+        isLoading = false;
+      }
+    }
+
+    function showStatus(message) {
+      const note = document.querySelector(".note");
+      if (note) note.textContent = message;
+    }
+
+    function selectMainCategory(category) {
+      if (category !== "com-nha") return;
+
+      document.getElementById("subChoices").classList.toggle("show");
+      document.getElementById("btn-com-nha").classList.add("active");
+
+      if (document.getElementById("subChoices").classList.contains("show")) {
+        selectCategory(currentCategory === "mon-canh" ? "mon-canh" : "mon-man");
+      }
+    }
+
+    function selectCategory(category) {
+      currentCategory = category;
+      document.querySelectorAll(".choice").forEach(el => el.classList.remove("active"));
+
+      if (category === "mon-man" || category === "mon-canh") {
+        document.getElementById("btn-com-nha").classList.add("active");
+        document.getElementById("subChoices").classList.add("show");
+      }
+
+      document.getElementById("btn-" + category).classList.add("active");
+      document.getElementById("dishCategory").value = category;
+      document.getElementById("listTitle").textContent = "Thêm món";
+      render();
+    }
+
+    function render() {
+      const list = document.getElementById("dishList");
+      const data = dishes[currentCategory] || [];
+
+      document.getElementById("count").textContent = `${data.length} món`;
+      const randomDishEl = document.getElementById("randomDish");
+      if (randomDishEl) randomDishEl.textContent = "Bấm nút để chọn món";
+
+      if (!data.length) {
+        list.innerHTML = '<div class="empty">Chưa có món nào. Thêm món đầu tiên nhé!</div>';
+        return;
+      }
+
+      list.innerHTML = data.map(dish => `
+        <div class="dish">
+          <div>
+            <div class="dish-name">${escapeHtml(dish.name)}</div>
+            <span class="dish-category">${escapeHtml(CATEGORY_NAMES[dish.category])}</span>
+          </div>
+          <div class="dish-actions">
+            <button class="edit-btn" onclick="editDish('${escapeJs(dish.id)}')" title="Sửa">✏️</button>
+            <button class="delete-btn" onclick="deleteDish('${escapeJs(dish.id)}')" title="Xóa">🗑</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function addDish() {
+      const input = document.getElementById("dishInput");
+      const category = document.getElementById("dishCategory").value;
+      const name = input.value.trim();
+      if (!name) return;
+
+      const button = document.querySelector(".add-btn");
+      button.disabled = true;
+      button.textContent = "Đang thêm...";
+
+      try {
+        const response = await fetch("/api/dishes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "add", category, name })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Không thêm được món.");
+
+        input.value = "";
+        currentCategory = category;
+        activateCategory(category);
+        await loadDishes(true);
+        input.focus();
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = "+ Thêm";
+      }
+    }
+
+    async function editDish(id) {
+      const dish = Object.values(dishes).flat().find(item => item.id === id);
+      if (!dish) return;
+
+      const name = prompt("Sửa tên món:", dish.name);
+      if (name === null) return;
+      const cleanName = name.trim();
+      if (!cleanName) return alert("Tên món không được để trống.");
+
+      try {
+        const response = await fetch("/api/dishes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "update", id, name: cleanName, category: dish.category })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Không sửa được món.");
+        await loadDishes(true);
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function deleteDish(id) {
+      const dish = Object.values(dishes).flat().find(item => item.id === id);
+      if (!dish) return;
+      if (!confirm(`Xóa món “${dish.name}” khỏi danh sách chung?`)) return;
+
+      try {
+        const response = await fetch("/api/dishes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "delete", id })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Không xóa được món.");
+        await loadDishes(true);
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    function activateCategory(category) {
+      document.querySelectorAll(".choice").forEach(el => el.classList.remove("active"));
+      if (category === "mon-man" || category === "mon-canh") {
+        document.getElementById("btn-com-nha").classList.add("active");
+        document.getElementById("subChoices").classList.add("show");
+      }
+      document.getElementById("btn-" + category).classList.add("active");
+      document.getElementById("dishCategory").value = category;
+    }
+
+    function randomDish() {
+      const list = dishes[currentCategory] || [];
+      const result = document.getElementById("randomDish");
+      if (!list.length) {
+        result.textContent = "Chưa có món để random";
+        return;
+      }
+      const item = list[Math.floor(Math.random() * list.length)];
+      result.textContent = item.name;
+      result.animate(
+        [
+          { transform: "scale(.96)", opacity: .55 },
+          { transform: "scale(1.04)", opacity: 1 },
+          { transform: "scale(1)", opacity: 1 }
+        ],
+        { duration: 280, easing: "ease-out" }
+      );
+    }
+
+    function openRandom() {
+      document.getElementById("mainApp").style.display = "none";
+      document.getElementById("randomScreen").classList.add("show");
+      document.getElementById("randomResult").textContent = "?";
+      document.getElementById("randomCategory").textContent =
+        "Sẽ quay trong: " + getCategoryName(currentCategory);
+    }
+
+    function closeRandom() {
+      document.getElementById("randomScreen").classList.remove("show");
+      document.getElementById("mainApp").style.display = "";
+    }
+
+    function getCategoryName(category) {
+      return CATEGORY_NAMES[category] || "Món đang chọn";
+    }
+
+    function spinRandom() {
+      const pool = dishes[currentCategory] || [];
+      const result = document.getElementById("randomResult");
+      const category = document.getElementById("randomCategory");
+
+      if (!pool.length) {
+        result.textContent = "Chưa có món 😋";
+        category.textContent = "Hãy thêm món vào " + getCategoryName(currentCategory) + " trước nhé!";
+        return;
+      }
+
+      result.classList.add("spinning");
+      category.textContent = "Đang quay trong: " + getCategoryName(currentCategory);
+      let count = 0;
+      const total = 14;
+      const timer = setInterval(() => {
+        result.textContent = pool[Math.floor(Math.random() * pool.length)].name;
+        count++;
+        if (count >= total) {
+          clearInterval(timer);
+          const finalDish = pool[Math.floor(Math.random() * pool.length)];
+          result.textContent = finalDish.name;
+          category.textContent = "Hôm nay bạn sẽ ăn " + getCategoryName(currentCategory).toLowerCase();
+          result.classList.remove("spinning");
+        }
+      }, 90);
+    }
+
+    function clearSelection() {
+      document.querySelectorAll(".choice").forEach(el => el.classList.remove("active"));
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function escapeJs(text) {
+      return String(text).replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\n/g, "\\n").replace(/\r/g, "\\r");
+    }
+
+    document.getElementById("dishInput").addEventListener("keydown", e => {
+      if (e.key === "Enter") addDish();
+    });
+
+    document.getElementById("subChoices").classList.add("show");
+    document.getElementById("btn-com-nha").classList.add("active");
+    document.getElementById("btn-mon-man").classList.add("active");
+    loadDishes();
+
+    // Đồng bộ gần thời gian thực: mỗi 3 giây lấy dữ liệu mới từ Google Sheets.
+    setInterval(() => loadDishes(true), 3000);
+  </script>
+</body>
+</html>

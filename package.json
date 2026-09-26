@@ -1,0 +1,8 @@
+{
+  "name": "hom-nay-an-gi",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  }
+}
